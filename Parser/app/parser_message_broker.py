@@ -9,7 +9,7 @@ class ParserMessageBroker():
 
     Attributes:
         parser_docker_logger (ParserLogger): Logger for recording events.
-        path_to_mq_cash (str): Path to the message queue cache file.
+        path_to_mq_cache (str): Path to the message queue cache file.
         connection (pika.BlockingConnection): RabbitMQ connection.
         channel (pika.BlockingConnection.channel): RabbitMQ channel.
         mq (dict): In-memory message queue.
@@ -21,13 +21,13 @@ class ParserMessageBroker():
         None: "will cross"
     }
 
-    def __init__(self, parser_docker_logger, path_to_mq_cash='mq_cash.json') -> None:
+    def __init__(self, parser_docker_logger, path_to_mq_cache='mq_cache.json') -> None:
         """
         Initialize the ParserMessageBroker with a logger and optional path to the cache file.
 
         Args:
             parser_docker_logger (ParserLogger): Logger for recording events.
-            path_to_mq_cash (str, optional): Path to the message queue cache file. Defaults to 'mq_cash.json'.
+            path_to_mq_cache (str, optional): Path to the message queue cache file. Defaults to 'mq_cache.json'.
         """
         self.parser_docker_logger = parser_docker_logger
         connection_params = pika.ConnectionParameters(
@@ -36,7 +36,7 @@ class ParserMessageBroker():
 
         self.connection = pika.BlockingConnection(connection_params)
 
-        self.path_to_mq_cash = path_to_mq_cash
+        self.path_to_mq_cache = path_to_mq_cache
 
         self.channel = self.connection.channel()
 
@@ -44,17 +44,17 @@ class ParserMessageBroker():
         self.channel.queue_declare(queue='parser2bot_queue')
         self.channel.queue_declare(queue='parser_info_queue')
 
-        self.load_mq_cash(is_width_auto_update=False)
+        self.load_mq_cache(is_width_auto_update=False)
 
-    def load_mq_cash(self, is_width_auto_update=True):
+    def load_mq_cache(self, is_width_auto_update=True):
         """
         Load the message queue cache from a file. Optionally update the in-memory queue with the loaded data.
 
         Args:
             is_width_auto_update (bool, optional): If True, merge loaded data with in-memory queue. Defaults to True.
         """
-        if os.path.exists(self.path_to_mq_cash):
-            with open(self.path_to_mq_cash, 'r', encoding="utf-8") as cash_fp:
+        if os.path.exists(self.path_to_mq_cache):
+            with open(self.path_to_mq_cache, 'r', encoding="utf-8") as cash_fp:
                 mq = json.load(cash_fp)
 
             if is_width_auto_update is True:
@@ -77,7 +77,7 @@ class ParserMessageBroker():
         
         self.mq = {}
     
-    def write_2_mq_cash(self, is_with_load=False):
+    def write_2_mq_cache(self, is_with_load=False):
         """
         Write the in-memory message queue to a cache file. Optionally load the cache before writing.
 
@@ -85,9 +85,9 @@ class ParserMessageBroker():
             is_with_load (bool, optional): If True, load the cache before writing. Defaults to False.
         """
         if is_with_load is True:
-            self.load_mq_cash()
+            self.load_mq_cache()
 
-        with open(self.path_to_mq_cash, 'w', encoding="utf-8") as cash_fp:
+        with open(self.path_to_mq_cache, 'w', encoding="utf-8") as cash_fp:
             json.dump(self.mq, cash_fp, indent=4)
 
     def read_message_from_bot2parser_queue(self):
@@ -115,7 +115,7 @@ class ParserMessageBroker():
                 
             self.channel.basic_ack(method_frame.delivery_tag)
 
-            self.write_2_mq_cash()
+            self.write_2_mq_cache()
     
     def set_condition_flag(self, condition_flag, check_value, now_pair_value):
         """
@@ -174,7 +174,7 @@ class ParserMessageBroker():
                 del self.mq[pair1_name]
                 del pair1_keys[pair1_keys.index(pair1_name)]
         
-        self.write_2_mq_cash()
+        self.write_2_mq_cache()
 
         return pair1_keys, pair2_keys
 
@@ -195,6 +195,6 @@ class ParserMessageBroker():
         """
         Close the RabbitMQ connection after writing the in-memory queue to the cache.
         """
-        self.write_2_mq_cash()
+        self.write_2_mq_cache()
 
         self.connection.close()
