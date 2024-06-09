@@ -40,7 +40,7 @@ and sends messages back to the `Bot` service when they are met.
 ### Install and Configure `Docker`
 Install `Docker` following the instructions for your OS:
 
-- [Installation on Windows 10](https://docs.docker.com/desktop/install/windows-install/)
+- [Installation on Windows](https://docs.docker.com/desktop/install/windows-install/)
 
 - [Installation on Linux Ubuntu](https://docs.docker.com/engine/install/ubuntu/)
 
